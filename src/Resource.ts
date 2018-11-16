@@ -136,20 +136,28 @@ class Resource {
 
     public Step_Release(process: string): number {
         let allocation = this.allocations[process] || 0;
-        let release = this.quantity * allocation / 100 / 360;
-
-        this.quantity -= release;
         
-        return release;
+        let release_amount = this.quantity * allocation / 100 / 360;
+        if (this.resource_spec.verbose) console.log(this.resource_spec.name + ' : ' + ' release ' + release_amount);
+        this.quantity -= release_amount;
+        
+        return release_amount;
     }
 
     public Step_Produce(n: number) {
         this.quantity += n;
     }
 
-    public Step_Regenerate(): void {
-        this.quantity += this.resource_spec.baseline / 360;
-        this.quantity *= (1 - this.resource_spec.decay / 36);
+    public Step_Regenerate(): void {        
+        var decay_amount = this.quantity * this.resource_spec.decay / 360;
+        if (this.resource_spec.verbose) console.log(this.resource_spec.name + ' : ' + ' decay ' + decay_amount);
+        this.quantity -= decay_amount;
+
+        if (this.resource_spec.baseline > this.quantity) {
+            var baseline_amount = (this.resource_spec.baseline - this.quantity) / 360;
+            if (this.resource_spec.verbose) console.log(this.resource_spec.name + ' : ' + ' baseline ' + baseline_amount);
+            this.quantity += baseline_amount;
+        }
     }
 
     public Step_RecordHistory(i: string) {

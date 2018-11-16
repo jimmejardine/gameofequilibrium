@@ -1,4 +1,5 @@
 class SampleProcessSpecs {
+
     public static SPECS = [
         {
             name: 'housing',
@@ -16,12 +17,15 @@ class SampleProcessSpecs {
         {
             name: 'farming',
             img: 'https://images.unsplash.com/photo-1500595046743-cd271d694d30',
-            inputs: ['humans'],
+            inputs: ['humans', 'water' ],
             outputs: ['food', 'humans'],
             compute: (X: any) => {
+                var supported_by_water = X.water / 36;
+                var supported_by_humans = X.humans * 15;
+
                 return {
                     humans: X.humans,
-                    food: 15 * X.humans,
+                    food: Math.min(supported_by_water, supported_by_humans),
                 };
             },
         },

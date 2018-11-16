@@ -112,16 +112,26 @@ var Resource = /** @class */ (function () {
     };
     Resource.prototype.Step_Release = function (process) {
         var allocation = this.allocations[process] || 0;
-        var release = this.quantity * allocation / 100 / 360;
-        this.quantity -= release;
-        return release;
+        var release_amount = this.quantity * allocation / 100 / 360;
+        if (this.resource_spec.verbose)
+            console.log(this.resource_spec.name + ' : ' + ' release ' + release_amount);
+        this.quantity -= release_amount;
+        return release_amount;
     };
     Resource.prototype.Step_Produce = function (n) {
         this.quantity += n;
     };
     Resource.prototype.Step_Regenerate = function () {
-        this.quantity += this.resource_spec.baseline / 360;
-        this.quantity *= (1 - this.resource_spec.decay / 36);
+        var decay_amount = this.quantity * this.resource_spec.decay / 360;
+        if (this.resource_spec.verbose)
+            console.log(this.resource_spec.name + ' : ' + ' decay ' + decay_amount);
+        this.quantity -= decay_amount;
+        if (this.resource_spec.baseline > this.quantity) {
+            var baseline_amount = (this.resource_spec.baseline - this.quantity) / 360;
+            if (this.resource_spec.verbose)
+                console.log(this.resource_spec.name + ' : ' + ' baseline ' + baseline_amount);
+            this.quantity += baseline_amount;
+        }
     };
     Resource.prototype.Step_RecordHistory = function (i) {
         this.quantity_history.push(this.quantity);
@@ -194,8 +204,14 @@ var SampleResourceSpecs = /** @class */ (function () {
         {
             name: 'humans',
             baseline: 100,
-            decay: 0.1,
+            decay: 0.01,
             img: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a',
+        },
+        {
+            name: 'water',
+            baseline: 1000,
+            decay: 0,
+            img: 'https://images.unsplash.com/photo-1500575351013-6b9af18d7722',
         },
         {
             name: 'food',
@@ -206,7 +222,7 @@ var SampleResourceSpecs = /** @class */ (function () {
         {
             name: 'stone',
             baseline: 0,
-            decay: 0.10,
+            decay: 0.1,
             img: 'https://images.unsplash.com/photo-1522140243784-a1df85e3c0f4',
         },
     ];
@@ -231,12 +247,14 @@ var SampleProcessSpecs = /** @class */ (function () {
         {
             name: 'farming',
             img: 'https://images.unsplash.com/photo-1500595046743-cd271d694d30',
-            inputs: ['humans'],
+            inputs: ['humans', 'water'],
             outputs: ['food', 'humans'],
             compute: function (X) {
+                var supported_by_water = X.water / 36;
+                var supported_by_humans = X.humans * 15;
                 return {
                     humans: X.humans,
-                    food: 15 * X.humans,
+                    food: Math.min(supported_by_water, supported_by_humans),
                 };
             },
         },

@@ -4,4 +4,6 @@ class ResourceSpec {
 
     baseline: number;    
     decay: number;
+
+    verbose?: boolean;
 }

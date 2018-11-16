@@ -36,6 +36,8 @@ class Game {
     public Step(step_n: number): void {
         console.log('Game step ' + step_n);
 
+        
+
         for (var i = 0; i < step_n; ++i) {
             ++this.step;
 
@@ -52,8 +54,9 @@ class Game {
                     this.resource_manager.Step_Produce(output, outputs[output]);
                 });
             });
-
+            
             this.resource_manager.Step_Regenerate();
+
             this.resource_manager.Step_RecordHistory('' + this.step);
         }
 
