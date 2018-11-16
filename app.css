@@ -5,16 +5,19 @@
 }
 
 #resource-manager {
-    position: absolute;
-    left:0%;
-    top:0%;
     width:100%;
     overflow-x:scroll;
     white-space: nowrap;
 }
 
-.resource {
-    background-color:lightblue;
+#process-manager {
+    width:100%;
+    overflow-x:scroll;
+    white-space: nowrap;
+}
+
+.resource, .process {
+    background-color:darkblue;
     display:inline-block;
     vertical-align: top;
     margin:5px;
@@ -22,18 +25,22 @@
     background-size: cover;
 }
 
-.resource .controls {
+.resource .controls, .process .controls {
     padding:5px;
     background-color:rgba(255,255,255,0.9);
 }
 
-.resource h1 {
+.resource h1, .process h1 {
     color:white;
     text-shadow: 0px 0px 5px black;
-    padding:10px 0px;
+    padding:10px;
     margin:0px;
     margin-bottom:10px;
 }
+
+
+
+
 
 #control-panel {
     position: absolute;

@@ -2,6 +2,7 @@
 /// <reference path="./SampleProcessSpecs.ts" />
 
 /// <reference path="./ResourceManager.ts" />
+/// <reference path="./ProcessManager.ts" />
 /// <reference path="./ControlPanel.ts" />
 
 class Game {
@@ -9,6 +10,7 @@ class Game {
     private resource_specs: ResourceSpec[];
     private process_specs: ProcessSpec[];
     private resource_manager: ResourceManager;
+    private process_manager: ProcessManager;
     private control_panel: ControlPanel;
 
     constructor() {
@@ -22,6 +24,9 @@ class Game {
 
         this.resource_manager = new ResourceManager(this.resource_specs, this.process_specs);
         $('body').append(this.resource_manager.GetUI());
+
+        this.process_manager = new ProcessManager(this.resource_specs, this.process_specs);
+        $('body').append(this.process_manager.GetUI());
 
         this.control_panel = new ControlPanel(this);
         $('body').append(this.control_panel.GetUI());

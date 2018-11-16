@@ -218,6 +218,7 @@ var SampleProcessSpecs = /** @class */ (function () {
     SampleProcessSpecs.SPECS = [
         {
             name: 'housing',
+            img: 'https://images.unsplash.com/photo-1516156008625-3a9d6067fab5',
             inputs: ['stone', 'food', 'humans'],
             outputs: ['humans'],
             compute: function (X) {
@@ -229,6 +230,7 @@ var SampleProcessSpecs = /** @class */ (function () {
         },
         {
             name: 'farming',
+            img: 'https://images.unsplash.com/photo-1500595046743-cd271d694d30',
             inputs: ['humans'],
             outputs: ['food', 'humans'],
             compute: function (X) {
@@ -240,6 +242,7 @@ var SampleProcessSpecs = /** @class */ (function () {
         },
         {
             name: 'mining',
+            img: 'https://images.unsplash.com/photo-1523416074908-e541a411fbf5',
             inputs: ['humans'],
             outputs: ['stone', 'humans'],
             compute: function (X) {
@@ -305,9 +308,54 @@ var ResourceManager = /** @class */ (function () {
     };
     return ResourceManager;
 }());
+/// <reference path="./ProcessSpec.ts" />
+var Process = /** @class */ (function () {
+    function Process(process_spec) {
+        this.process_spec = process_spec;
+    }
+    Process.prototype.GetUI = function () {
+        var panel = $('<div class="process" style="background-image:url(' + this.process_spec.img + '?w=600&q=80);"></div>');
+        panel.append($('<div style="text-align:center;"><h1>' + this.process_spec.name + '</h1></div>'));
+        return panel;
+    };
+    Process.prototype.Step_RefreshUI = function () {
+    };
+    return Process;
+}());
+/// <reference path="./ResourceSpec.ts" />
+/// <reference path="./ProcessSpec.ts" />
+/// <reference path="./Process.ts" />
+var ProcessManager = /** @class */ (function () {
+    function ProcessManager(resource_specs, process_specs) {
+        var _this = this;
+        this.resource_specs = resource_specs;
+        this.process_specs = process_specs;
+        this.processes_array = [];
+        this.processes_map = {};
+        this.process_specs.forEach(function (process_spec) {
+            var process = new Process(process_spec);
+            _this.processes_array.push(process);
+            _this.processes_map[process_spec.name] = process;
+        });
+    }
+    ProcessManager.prototype.GetUI = function () {
+        var panel = $('<div id="process-manager"></div>');
+        this.processes_array.forEach(function (process) {
+            panel.append(process.GetUI());
+        });
+        return panel;
+    };
+    ProcessManager.prototype.Step_RefreshUI = function () {
+        this.processes_array.forEach(function (process) {
+            process.Step_RefreshUI();
+        });
+    };
+    return ProcessManager;
+}());
 /// <reference path="./SampleResourceSpecs.ts" />
 /// <reference path="./SampleProcessSpecs.ts" />
 /// <reference path="./ResourceManager.ts" />
+/// <reference path="./ProcessManager.ts" />
 /// <reference path="./ControlPanel.ts" />
 var Game = /** @class */ (function () {
     function Game() {
@@ -319,6 +367,8 @@ var Game = /** @class */ (function () {
         this.process_specs = SampleProcessSpecs.SPECS;
         this.resource_manager = new ResourceManager(this.resource_specs, this.process_specs);
         $('body').append(this.resource_manager.GetUI());
+        this.process_manager = new ProcessManager(this.resource_specs, this.process_specs);
+        $('body').append(this.process_manager.GetUI());
         this.control_panel = new ControlPanel(this);
         $('body').append(this.control_panel.GetUI());
     };

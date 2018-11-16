@@ -2,6 +2,7 @@ class SampleProcessSpecs {
     public static SPECS = [
         {
             name: 'housing',
+            img: 'https://images.unsplash.com/photo-1516156008625-3a9d6067fab5',
             inputs: ['stone', 'food', 'humans'],
             outputs: ['humans'],
             compute: (X: any) => {
@@ -14,6 +15,7 @@ class SampleProcessSpecs {
 
         {
             name: 'farming',
+            img: 'https://images.unsplash.com/photo-1500595046743-cd271d694d30',
             inputs: ['humans'],
             outputs: ['food', 'humans'],
             compute: (X: any) => {
@@ -26,6 +28,7 @@ class SampleProcessSpecs {
 
         {
             name: 'mining',
+            img: 'https://images.unsplash.com/photo-1523416074908-e541a411fbf5',
             inputs: ['humans'],
             outputs: ['stone', 'humans'],
             compute: (X: any) => {
