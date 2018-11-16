@@ -1,0 +1,45 @@
+@import url('https://fonts.googleapis.com/css?family=Quicksand');
+
+* {
+    font-family: 'Quicksand', sans-serif;
+}
+
+#resource-manager {
+    position: absolute;
+    left:0%;
+    top:0%;
+    width:100%;
+    overflow-x:scroll;
+    white-space: nowrap;
+}
+
+.resource {
+    background-color:lightblue;
+    display:inline-block;
+    vertical-align: top;
+    margin:5px;
+    background-position: center center;
+    background-size: cover;
+}
+
+.resource .controls {
+    padding:5px;
+    background-color:rgba(255,255,255,0.9);
+}
+
+.resource h1 {
+    color:white;
+    text-shadow: 0px 0px 5px black;
+    padding:10px 0px;
+    margin:0px;
+    margin-bottom:10px;
+}
+
+#control-panel {
+    position: absolute;
+    right:0%;
+    bottom:0%;
+    padding:5px;
+    border: solid 1px orange;
+    
+}

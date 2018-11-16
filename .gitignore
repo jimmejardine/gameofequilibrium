@@ -1,0 +1,8 @@
+.vs/
+bin/
+obj/
+node_modules/
+.DS_Store/
+releases/
+**/ts/**/*.js
+**/ts/**/*.js.map
