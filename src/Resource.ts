@@ -17,11 +17,16 @@ class Resource {
 
         this.allocations = {};
         process_specs.forEach(process_spec => {
-            process_spec.inputs.forEach(input => {
+            Object.keys(process_spec.employs).forEach(input => {
                 if (input == this.resource_spec.name) {
                     this.allocations[process_spec.name] = 0;
                 }
-            })
+            });
+            Object.keys(process_spec.consumes).forEach(input => {
+                if (input == this.resource_spec.name) {
+                    this.allocations[process_spec.name] = 0;
+                }
+            });
         });
 
     }

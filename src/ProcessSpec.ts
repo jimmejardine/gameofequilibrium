@@ -1,10 +1,9 @@
 interface ProcessSpec {
     name: string;
     img: string;
+
+    output: string;
     
-    inputs: string[];
-    outputs: string[];
-    
-    
-    compute: (ins: any) => any;
+    employs: { [ resource: string ]: number };
+    consumes: { [ resource: string ]: number };
 }

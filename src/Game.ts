@@ -36,24 +36,11 @@ class Game {
     public Step(step_n: number): void {
         console.log('Game step ' + step_n);
 
-        
-
         for (var i = 0; i < step_n; ++i) {
             ++this.step;
 
             // Run each process
-            this.process_specs.forEach(process_spec => {
-                var inputs = {};
-                process_spec.inputs.forEach(input => {
-                    inputs[input] = this.resource_manager.Step_Release(input, process_spec.name);
-                });
-
-                let outputs = process_spec.compute(inputs);
-
-                Object.keys(outputs).forEach(output => {
-                    this.resource_manager.Step_Produce(output, outputs[output]);
-                });
-            });
+            this.process_manager.Step_Process(this.resource_manager);
             
             this.resource_manager.Step_Regenerate();
 
@@ -61,6 +48,7 @@ class Game {
         }
 
         this.resource_manager.Step_RefreshUI();
+        this.process_manager.Step_RefreshUI();
     }
 }
 

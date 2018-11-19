@@ -12,7 +12,12 @@ var Resource = /** @class */ (function () {
         this.quantity_history_label = [];
         this.allocations = {};
         process_specs.forEach(function (process_spec) {
-            process_spec.inputs.forEach(function (input) {
+            Object.keys(process_spec.employs).forEach(function (input) {
+                if (input == _this.resource_spec.name) {
+                    _this.allocations[process_spec.name] = 0;
+                }
+            });
+            Object.keys(process_spec.consumes).forEach(function (input) {
                 if (input == _this.resource_spec.name) {
                     _this.allocations[process_spec.name] = 0;
                 }
@@ -235,40 +240,34 @@ var SampleProcessSpecs = /** @class */ (function () {
         {
             name: 'housing',
             img: 'https://images.unsplash.com/photo-1516156008625-3a9d6067fab5',
-            inputs: ['stone', 'food', 'humans'],
-            outputs: ['humans'],
-            compute: function (X) {
-                var supported_by_stone = X.stone / 10;
-                var supported_by_food = X.food / 36;
-                var supported_by_humans = X.humans / 2;
-                return { humans: X.humans + Math.min(supported_by_stone, supported_by_food, supported_by_humans) };
+            output: 'humans',
+            employs: {
+                'humans': 2,
+            },
+            consumes: {
+                'stone': 10,
+                'food': 36,
             },
         },
         {
             name: 'farming',
             img: 'https://images.unsplash.com/photo-1500595046743-cd271d694d30',
-            inputs: ['humans', 'water'],
-            outputs: ['food', 'humans'],
-            compute: function (X) {
-                var supported_by_water = X.water / 36;
-                var supported_by_humans = X.humans * 15;
-                return {
-                    humans: X.humans,
-                    food: Math.min(supported_by_water, supported_by_humans),
-                };
+            output: 'food',
+            employs: {
+                'humans': 1 / 15,
+            },
+            consumes: {
+                'water': 1,
             },
         },
         {
             name: 'mining',
             img: 'https://images.unsplash.com/photo-1523416074908-e541a411fbf5',
-            inputs: ['humans'],
-            outputs: ['stone', 'humans'],
-            compute: function (X) {
-                return {
-                    humans: X.humans,
-                    stone: 10 * X.humans,
-                };
+            output: 'stone',
+            employs: {
+                'humans': 1 / 10,
             },
+            consumes: {},
         },
     ];
     return SampleProcessSpecs;
@@ -329,12 +328,56 @@ var ResourceManager = /** @class */ (function () {
 /// <reference path="./ProcessSpec.ts" />
 var Process = /** @class */ (function () {
     function Process(process_spec) {
+        var _this = this;
         this.process_spec = process_spec;
+        this.inputs_array = [];
+        this.inputs_required_map = {};
+        this.inputs_provided_map = {};
+        this.output_possible_map = {};
+        this.inputs_used_map = {};
+        // Create the map of all the inputs
+        Object.keys(this.process_spec.employs).forEach(function (resource) {
+            _this.inputs_required_map[resource] = (_this.inputs_required_map[resource] || 0) + _this.process_spec.employs[resource];
+        });
+        Object.keys(this.process_spec.consumes).forEach(function (resource) {
+            _this.inputs_required_map[resource] = (_this.inputs_required_map[resource] || 0) + _this.process_spec.employs[resource];
+        });
+        // Create the array of all the inputs
+        Object.keys(this.inputs_required_map).forEach(function (resource) {
+            _this.inputs_array.push(resource);
+        });
     }
     Process.prototype.GetUI = function () {
         var panel = $('<div class="process" style="background-image:url(' + this.process_spec.img + '?w=600&q=80);"></div>');
         panel.append($('<div style="text-align:center;"><h1>' + this.process_spec.name + '</h1></div>'));
         return panel;
+    };
+    Process.prototype.Step_Process = function (resource_manager) {
+        var _this = this;
+        // How much have we been provided
+        this.inputs_array.forEach(function (resource) {
+            _this.inputs_provided_map[resource] = resource_manager.Step_Release(resource, _this.process_spec.name);
+        });
+        // How many can be produced with the inputs
+        this.inputs_array.forEach(function (resource) {
+            _this.output_possible_map[resource] = _this.inputs_provided_map[resource] / _this.inputs_required_map[resource];
+        });
+        var output_possible = _.min(_.values(this.output_possible_map));
+        // How much of each input was utilised by the production
+        this.inputs_array.forEach(function (resource) {
+            _this.inputs_used_map[resource] = output_possible * _this.inputs_required_map[resource];
+        });
+        // Produce the output
+        resource_manager.Step_Produce(this.process_spec.output, output_possible);
+        // Replenish the employment bits
+        Object.keys(this.process_spec.employs).forEach(function (resource) {
+            var amount_consumed = 0;
+            if (_this.process_spec.consumes[resource]) {
+                amount_consumed = output_possible * _this.process_spec.consumes[resource];
+            }
+            var amount_returned = _this.inputs_provided_map[resource] - amount_consumed;
+            resource_manager.Step_Produce(resource, amount_returned);
+        });
     };
     Process.prototype.Step_RefreshUI = function () {
     };
@@ -362,6 +405,11 @@ var ProcessManager = /** @class */ (function () {
             panel.append(process.GetUI());
         });
         return panel;
+    };
+    ProcessManager.prototype.Step_Process = function (resource_manager) {
+        this.processes_array.forEach(function (process) {
+            process.Step_Process(resource_manager);
+        });
     };
     ProcessManager.prototype.Step_RefreshUI = function () {
         this.processes_array.forEach(function (process) {
@@ -391,33 +439,19 @@ var Game = /** @class */ (function () {
         $('body').append(this.control_panel.GetUI());
     };
     Game.prototype.Step = function (step_n) {
-        var _this = this;
         console.log('Game step ' + step_n);
         for (var i = 0; i < step_n; ++i) {
             ++this.step;
             // Run each process
-            this.process_specs.forEach(function (process_spec) {
-                var inputs = {};
-                process_spec.inputs.forEach(function (input) {
-                    inputs[input] = _this.resource_manager.Step_Release(input, process_spec.name);
-                });
-                var outputs = process_spec.compute(inputs);
-                Object.keys(outputs).forEach(function (output) {
-                    _this.resource_manager.Step_Produce(output, outputs[output]);
-                });
-            });
+            this.process_manager.Step_Process(this.resource_manager);
             this.resource_manager.Step_Regenerate();
             this.resource_manager.Step_RecordHistory('' + this.step);
         }
         this.resource_manager.Step_RefreshUI();
+        this.process_manager.Step_RefreshUI();
     };
     return Game;
 }());
 var game = new Game();
 game.Initialise();
-var ProcessSpec = /** @class */ (function () {
-    function ProcessSpec() {
-    }
-    return ProcessSpec;
-}());
 //# sourceMappingURL=app.js.map

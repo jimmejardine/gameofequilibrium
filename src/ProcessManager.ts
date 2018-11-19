@@ -2,7 +2,7 @@
 /// <reference path="./ProcessSpec.ts" />
 /// <reference path="./Process.ts" />
 
-class ProcessManager {
+class ProcessManager {    
     private processes_array: Process[];
     private processes_map: { [key: string]: Process };
 
@@ -22,6 +22,12 @@ class ProcessManager {
             panel.append(process.GetUI());
         });
         return panel;
+    }
+
+    public Step_Process(resource_manager: ResourceManager): void {
+        this.processes_array.forEach(process => {            
+            process.Step_Process(resource_manager);
+        });
     }
 
     public Step_RefreshUI(): void {
