@@ -17,6 +17,7 @@
 }
 
 .resource, .process {
+    text-align: center;
     background-color:darkblue;
     display:inline-block;
     vertical-align: top;
@@ -35,7 +36,6 @@
     text-shadow: 0px 0px 5px black;
     padding:10px;
     margin:0px;
-    margin-bottom:10px;
 }
 
 

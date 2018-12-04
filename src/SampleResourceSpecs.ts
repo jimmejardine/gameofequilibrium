@@ -2,6 +2,13 @@
 class SampleResourceSpecs {
     public static SPECS = [
         {
+            name: 'progress',
+            baseline: 1,
+            decay: 0,
+            img: 'https://images.unsplash.com/xxx',
+        },
+
+        {
             name: 'humans',
             baseline: 100,
             decay: 0.01,

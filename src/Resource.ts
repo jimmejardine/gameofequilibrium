@@ -8,7 +8,13 @@ class Resource {
 
     constructor(private resource_spec: ResourceSpec, process_specs: ProcessSpec[]) {
         this.allocations = {};
+
         process_specs.forEach(process_spec => {
+            // All processes need progress
+            if ('progress' == resource_spec.name) {
+                this.allocations[process_spec.name] = 0;
+            }
+
             Object.keys(process_spec.employs).forEach(input => {
                 if (input == this.resource_spec.name) {
                     this.allocations[process_spec.name] = 0;
