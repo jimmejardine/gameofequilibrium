@@ -41,11 +41,16 @@ class Game {
         for (var i = 0; i < step_n; ++i) {
             ++this.step;
 
-            Tools.CHART_HISTORY_LABELS.push('' + this.step);
-            while (Tools.CHART_HISTORY_LABELS.length > Tools.CHART_HISTORY_LABELS_MAX) {
-                Tools.CHART_HISTORY_LABELS.splice(0, 1);
+            // Bump along the history labels
+            var step_label = '' + this.step;
+            Tools.CHART_HISTORY_LABELS_SHORT.push(step_label);
+            Tools.CHART_HISTORY_LABELS_LONG.push(step_label);
+            while (Tools.CHART_HISTORY_LABELS_SHORT.length > Tools.CHART_HISTORY_LABELS_SHORT_MAX) {
+                Tools.CHART_HISTORY_LABELS_SHORT.splice(0, 1);
             }
-            
+            while (Tools.CHART_HISTORY_LABELS_LONG.length > Tools.CHART_HISTORY_LABELS_LONG_MAX) {
+                Tools.CHART_HISTORY_LABELS_LONG.splice(0, 1);
+            }
 
             // Run each process
             this.process_manager.Step_Process(this.resource_manager);
@@ -53,6 +58,7 @@ class Game {
             this.resource_manager.Step_Regenerate();
 
             this.resource_manager.Step_RecordHistory();
+            this.process_manager.Step_RecordHistory();
         }
 
         this.resource_manager.Step_RefreshUI();

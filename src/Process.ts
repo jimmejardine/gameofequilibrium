@@ -5,30 +5,30 @@
 class  Process {
     private inputs_array: string[] = [];
     
-    private chart_quantity: Chart;
-    private quantity_history: number[];
+    private output_produced: number = 0;
+    private output_produced_history: number[] = [];
 
+    private chart_output_quantity: Chart;
 
     private inputs_required_map: { [resource: string]: number } = {};
     private inputs_provided_map: { [resource: string]: number } = {};
     private output_possible_map: { [resource: string]: number } = {};
     private inputs_used_map: { [resource: string]: number } = {};
 
-    
-
-
     constructor(private process_spec: ProcessSpec) {
+        var self = this;
+
         // Create the map of all the inputs
-        Object.keys(this.process_spec.employs).forEach(resource => {
-            this.inputs_required_map[resource] = (this.inputs_required_map[resource] || 0) + this.process_spec.employs[resource];
+        Object.keys(self.process_spec.employs).forEach(resource => {
+            self.inputs_required_map[resource] = (self.inputs_required_map[resource] || 0) + self.process_spec.employs[resource];
         });
-        Object.keys(this.process_spec.consumes).forEach(resource => {
-            this.inputs_required_map[resource] = (this.inputs_required_map[resource] || 0) + this.process_spec.employs[resource];
+        Object.keys(self.process_spec.consumes).forEach(resource => {
+            self.inputs_required_map[resource] = (self.inputs_required_map[resource] || 0) + self.process_spec.consumes[resource];
         });
         
         // Create the array of all the inputs
-        Object.keys(this.inputs_required_map).forEach(resource => {
-            this.inputs_array.push(resource);
+        Object.keys(self.inputs_required_map).forEach(resource => {
+            self.inputs_array.push(resource);
         });
     }
 
@@ -40,17 +40,17 @@ class  Process {
         panel.append(control_panel);
 
         {
-            let canvas_chart_quantity = <HTMLCanvasElement>($('<canvas />')[0]);
+            let canvas_chart_output_quantity = <HTMLCanvasElement>($('<canvas />')[0]);
 
-            var ctx = canvas_chart_quantity.getContext('2d');
+            var ctx = canvas_chart_output_quantity.getContext('2d');
 
             var config = {
                 type: 'line',
                 data: {
-                    labels: Tools.CHART_HISTORY_LABELS,
+                    labels: Tools.CHART_HISTORY_LABELS_SHORT,
                     datasets: [{
                         pointRadius: 1,
-                        data: this.quantity_history,
+                        data: this.output_produced_history,
                         lineTension: 0,
                     }]
                 },
@@ -62,8 +62,8 @@ class  Process {
 
             };
 
-            this.chart_quantity = new Chart(ctx, config);
-            control_panel.append(canvas_chart_quantity);
+            this.chart_output_quantity = new Chart(ctx, config);
+            control_panel.append(canvas_chart_output_quantity);
         }
 
 
@@ -80,29 +80,33 @@ class  Process {
         this.inputs_array.forEach(resource => {
             this.output_possible_map[resource] = this.inputs_provided_map[resource] / this.inputs_required_map[resource];
         });
-        var output_possible = _.min(_.values(this.output_possible_map));
+        this.output_produced = _.min(_.values(this.output_possible_map));
         
         // How much of each input was utilised by the production
         this.inputs_array.forEach(resource => {
-            this.inputs_used_map[resource] = output_possible * this.inputs_required_map[resource];
-        });        
+            this.inputs_used_map[resource] = this.output_produced * this.inputs_required_map[resource];
+        });
 
         // Produce the output
-        resource_manager.Step_Produce(this.process_spec.output, output_possible);
+        resource_manager.Step_Produce(this.process_spec.output, this.output_produced);
 
         // Replenish the employment bits
         Object.keys(this.process_spec.employs).forEach(resource => {
             var amount_consumed = 0;
             if (this.process_spec.consumes[resource]) {
-                amount_consumed = output_possible * this.process_spec.consumes[resource];
+                amount_consumed = this.output_produced * this.process_spec.consumes[resource];
             }
 
             var amount_returned = this.inputs_provided_map[resource] - amount_consumed;            
             resource_manager.Step_Produce(resource, amount_returned);
         });
-        
-
     }
+
+    public Step_RecordHistory() {
+        Tools.RecordQuantityHistory_SHORT(this.output_produced_history,this.output_produced);
+    }
+
     public Step_RefreshUI(): void {
+        this.chart_output_quantity.update();
     }
 }

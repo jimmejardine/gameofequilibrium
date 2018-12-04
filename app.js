@@ -35,7 +35,7 @@ var Resource = /** @class */ (function () {
             var config = {
                 type: 'line',
                 data: {
-                    labels: Tools.CHART_HISTORY_LABELS,
+                    labels: Tools.CHART_HISTORY_LABELS_LONG,
                     datasets: [{
                             pointRadius: 1,
                             data: this.quantity_history,
@@ -120,10 +120,7 @@ var Resource = /** @class */ (function () {
         }
     };
     Resource.prototype.Step_RecordHistory = function () {
-        this.quantity_history.push(this.quantity);
-        while (this.quantity_history.length > Tools.CHART_HISTORY_LABELS_MAX) {
-            this.quantity_history.splice(0, 1);
-        }
+        Tools.RecordQuantityHistory_LONG(this.quantity_history, this.quantity);
     };
     Resource.prototype.Step_RefreshUI = function () {
         this.chart_quantity.update();
@@ -181,6 +178,18 @@ var ControlPanel = /** @class */ (function () {
 var Tools = /** @class */ (function () {
     function Tools() {
     }
+    Tools.RecordQuantityHistory_SHORT = function (quantity_history, quantity) {
+        Tools.RecordQuantityHistory_XXX(Tools.CHART_HISTORY_LABELS_SHORT_MAX, quantity_history, quantity);
+    };
+    Tools.RecordQuantityHistory_LONG = function (quantity_history, quantity) {
+        Tools.RecordQuantityHistory_XXX(Tools.CHART_HISTORY_LABELS_LONG_MAX, quantity_history, quantity);
+    };
+    Tools.RecordQuantityHistory_XXX = function (MAX, quantity_history, quantity) {
+        quantity_history.push(quantity);
+        while (quantity_history.length > MAX) {
+            quantity_history.splice(0, 1);
+        }
+    };
     Tools.Get_CHART_OPTIONS = function (legend) {
         return {
             legend: legend,
@@ -202,8 +211,10 @@ var Tools = /** @class */ (function () {
             }
         };
     };
-    Tools.CHART_HISTORY_LABELS_MAX = 10 * 360;
-    Tools.CHART_HISTORY_LABELS = [];
+    Tools.CHART_HISTORY_LABELS_SHORT_MAX = 1 * 360;
+    Tools.CHART_HISTORY_LABELS_LONG_MAX = 5 * 360;
+    Tools.CHART_HISTORY_LABELS_SHORT = [];
+    Tools.CHART_HISTORY_LABELS_LONG = [];
     return Tools;
 }());
 var SampleResourceSpecs = /** @class */ (function () {
@@ -333,23 +344,25 @@ var ResourceManager = /** @class */ (function () {
 /// <reference path="./ProcessSpec.ts" />
 var Process = /** @class */ (function () {
     function Process(process_spec) {
-        var _this = this;
         this.process_spec = process_spec;
         this.inputs_array = [];
+        this.output_produced = 0;
+        this.output_produced_history = [];
         this.inputs_required_map = {};
         this.inputs_provided_map = {};
         this.output_possible_map = {};
         this.inputs_used_map = {};
+        var self = this;
         // Create the map of all the inputs
-        Object.keys(this.process_spec.employs).forEach(function (resource) {
-            _this.inputs_required_map[resource] = (_this.inputs_required_map[resource] || 0) + _this.process_spec.employs[resource];
+        Object.keys(self.process_spec.employs).forEach(function (resource) {
+            self.inputs_required_map[resource] = (self.inputs_required_map[resource] || 0) + self.process_spec.employs[resource];
         });
-        Object.keys(this.process_spec.consumes).forEach(function (resource) {
-            _this.inputs_required_map[resource] = (_this.inputs_required_map[resource] || 0) + _this.process_spec.employs[resource];
+        Object.keys(self.process_spec.consumes).forEach(function (resource) {
+            self.inputs_required_map[resource] = (self.inputs_required_map[resource] || 0) + self.process_spec.consumes[resource];
         });
         // Create the array of all the inputs
-        Object.keys(this.inputs_required_map).forEach(function (resource) {
-            _this.inputs_array.push(resource);
+        Object.keys(self.inputs_required_map).forEach(function (resource) {
+            self.inputs_array.push(resource);
         });
     }
     Process.prototype.GetUI = function () {
@@ -358,15 +371,15 @@ var Process = /** @class */ (function () {
         var control_panel = $('<div class="controls"></div>');
         panel.append(control_panel);
         {
-            var canvas_chart_quantity = ($('<canvas />')[0]);
-            var ctx = canvas_chart_quantity.getContext('2d');
+            var canvas_chart_output_quantity = ($('<canvas />')[0]);
+            var ctx = canvas_chart_output_quantity.getContext('2d');
             var config = {
                 type: 'line',
                 data: {
-                    labels: Tools.CHART_HISTORY_LABELS,
+                    labels: Tools.CHART_HISTORY_LABELS_SHORT,
                     datasets: [{
                             pointRadius: 1,
-                            data: this.quantity_history,
+                            data: this.output_produced_history,
                             lineTension: 0,
                         }]
                 },
@@ -374,8 +387,8 @@ var Process = /** @class */ (function () {
                     display: false,
                 }),
             };
-            this.chart_quantity = new Chart(ctx, config);
-            control_panel.append(canvas_chart_quantity);
+            this.chart_output_quantity = new Chart(ctx, config);
+            control_panel.append(canvas_chart_output_quantity);
         }
         return panel;
     };
@@ -389,24 +402,28 @@ var Process = /** @class */ (function () {
         this.inputs_array.forEach(function (resource) {
             _this.output_possible_map[resource] = _this.inputs_provided_map[resource] / _this.inputs_required_map[resource];
         });
-        var output_possible = _.min(_.values(this.output_possible_map));
+        this.output_produced = _.min(_.values(this.output_possible_map));
         // How much of each input was utilised by the production
         this.inputs_array.forEach(function (resource) {
-            _this.inputs_used_map[resource] = output_possible * _this.inputs_required_map[resource];
+            _this.inputs_used_map[resource] = _this.output_produced * _this.inputs_required_map[resource];
         });
         // Produce the output
-        resource_manager.Step_Produce(this.process_spec.output, output_possible);
+        resource_manager.Step_Produce(this.process_spec.output, this.output_produced);
         // Replenish the employment bits
         Object.keys(this.process_spec.employs).forEach(function (resource) {
             var amount_consumed = 0;
             if (_this.process_spec.consumes[resource]) {
-                amount_consumed = output_possible * _this.process_spec.consumes[resource];
+                amount_consumed = _this.output_produced * _this.process_spec.consumes[resource];
             }
             var amount_returned = _this.inputs_provided_map[resource] - amount_consumed;
             resource_manager.Step_Produce(resource, amount_returned);
         });
     };
+    Process.prototype.Step_RecordHistory = function () {
+        Tools.RecordQuantityHistory_SHORT(this.output_produced_history, this.output_produced);
+    };
     Process.prototype.Step_RefreshUI = function () {
+        this.chart_output_quantity.update();
     };
     return Process;
 }());
@@ -436,6 +453,12 @@ var ProcessManager = /** @class */ (function () {
     ProcessManager.prototype.Step_Process = function (resource_manager) {
         this.processes_array.forEach(function (process) {
             process.Step_Process(resource_manager);
+            "";
+        });
+    };
+    ProcessManager.prototype.Step_RecordHistory = function () {
+        this.processes_array.forEach(function (process) {
+            process.Step_RecordHistory();
         });
     };
     ProcessManager.prototype.Step_RefreshUI = function () {
@@ -470,14 +493,21 @@ var Game = /** @class */ (function () {
         console.log('Game step ' + step_n);
         for (var i = 0; i < step_n; ++i) {
             ++this.step;
-            Tools.CHART_HISTORY_LABELS.push('' + this.step);
-            while (Tools.CHART_HISTORY_LABELS.length > Tools.CHART_HISTORY_LABELS_MAX) {
-                Tools.CHART_HISTORY_LABELS.splice(0, 1);
+            // Bump along the history labels
+            var step_label = '' + this.step;
+            Tools.CHART_HISTORY_LABELS_SHORT.push(step_label);
+            Tools.CHART_HISTORY_LABELS_LONG.push(step_label);
+            while (Tools.CHART_HISTORY_LABELS_SHORT.length > Tools.CHART_HISTORY_LABELS_SHORT_MAX) {
+                Tools.CHART_HISTORY_LABELS_SHORT.splice(0, 1);
+            }
+            while (Tools.CHART_HISTORY_LABELS_LONG.length > Tools.CHART_HISTORY_LABELS_LONG_MAX) {
+                Tools.CHART_HISTORY_LABELS_LONG.splice(0, 1);
             }
             // Run each process
             this.process_manager.Step_Process(this.resource_manager);
             this.resource_manager.Step_Regenerate();
             this.resource_manager.Step_RecordHistory();
+            this.process_manager.Step_RecordHistory();
         }
         this.resource_manager.Step_RefreshUI();
         this.process_manager.Step_RefreshUI();

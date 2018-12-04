@@ -27,6 +27,12 @@ class ProcessManager {
     public Step_Process(resource_manager: ResourceManager): void {
         this.processes_array.forEach(process => {            
             process.Step_Process(resource_manager);
+``        });
+    }
+    
+    public Step_RecordHistory(): void {
+        this.processes_array.forEach(process => {
+            process.Step_RecordHistory();
         });
     }
 

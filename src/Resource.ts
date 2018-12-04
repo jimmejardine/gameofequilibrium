@@ -1,15 +1,12 @@
 class Resource {
-    private quantity: number;
-    private quantity_history: number[];
+    private quantity: number = 0;
+    private quantity_history: number[] = [];
 
     private allocations: any;
 
     private chart_quantity: Chart;
 
     constructor(private resource_spec: ResourceSpec, process_specs: ProcessSpec[]) {
-        this.quantity = 0;
-        this.quantity_history = [];
-
         this.allocations = {};
         process_specs.forEach(process_spec => {
             Object.keys(process_spec.employs).forEach(input => {
@@ -23,7 +20,6 @@ class Resource {
                 }
             });
         });
-
     }
 
     public GetUI() {
@@ -41,7 +37,7 @@ class Resource {
             var config = {
                 type: 'line',
                 data: {
-                    labels: Tools.CHART_HISTORY_LABELS,
+                    labels: Tools.CHART_HISTORY_LABELS_LONG,
                     datasets: [{
                         pointRadius: 1,
                         data: this.quantity_history,
@@ -145,11 +141,7 @@ class Resource {
     }
 
     public Step_RecordHistory() {
-        this.quantity_history.push(this.quantity);
-        
-        while (this.quantity_history.length > Tools.CHART_HISTORY_LABELS_MAX) {
-            this.quantity_history.splice(0, 1);
-        }
+        Tools.RecordQuantityHistory_LONG(this.quantity_history, this.quantity);
     }
 
     public Step_RefreshUI() {
