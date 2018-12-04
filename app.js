@@ -9,7 +9,6 @@ var Resource = /** @class */ (function () {
         this.resource_spec = resource_spec;
         this.quantity = 0;
         this.quantity_history = [];
-        this.quantity_history_label = [];
         this.allocations = {};
         process_specs.forEach(function (process_spec) {
             Object.keys(process_spec.employs).forEach(function (input) {
@@ -36,34 +35,16 @@ var Resource = /** @class */ (function () {
             var config = {
                 type: 'line',
                 data: {
-                    labels: this.quantity_history_label,
+                    labels: Tools.CHART_HISTORY_LABELS,
                     datasets: [{
                             pointRadius: 1,
                             data: this.quantity_history,
                             lineTension: 0,
                         }]
                 },
-                options: {
-                    legend: {
-                        display: false
-                    },
-                    tooltips: {
-                        enabled: false
-                    },
-                    responsive: true,
-                    elements: {
-                        point: {
-                        //pointStyle: 'none',
-                        }
-                    },
-                    scales: {
-                        yAxes: [{
-                                ticks: {
-                                    min: 0,
-                                }
-                            }]
-                    }
-                }
+                options: Tools.Get_CHART_OPTIONS({
+                    display: false,
+                }),
             };
             this.chart_quantity = new Chart(ctx, config);
             control_panel.append(canvas_chart_quantity);
@@ -138,20 +119,15 @@ var Resource = /** @class */ (function () {
             this.quantity += baseline_amount;
         }
     };
-    Resource.prototype.Step_RecordHistory = function (i) {
+    Resource.prototype.Step_RecordHistory = function () {
         this.quantity_history.push(this.quantity);
-        this.quantity_history_label.push(i);
-        while (this.quantity_history.length > Resource.HISTORY) {
+        while (this.quantity_history.length > Tools.CHART_HISTORY_LABELS_MAX) {
             this.quantity_history.splice(0, 1);
-        }
-        while (this.quantity_history_label.length > Resource.HISTORY) {
-            this.quantity_history_label.splice(0, 1);
         }
     };
     Resource.prototype.Step_RefreshUI = function () {
         this.chart_quantity.update();
     };
-    Resource.HISTORY = 10 * 360;
     return Resource;
 }());
 /// <reference path="./ResourceSpec.ts" />
@@ -201,6 +177,34 @@ var ControlPanel = /** @class */ (function () {
         return panel;
     };
     return ControlPanel;
+}());
+var Tools = /** @class */ (function () {
+    function Tools() {
+    }
+    Tools.Get_CHART_OPTIONS = function (legend) {
+        return {
+            legend: legend,
+            tooltips: {
+                enabled: false,
+            },
+            responsive: true,
+            elements: {
+                point: {
+                //pointStyle: 'none',
+                }
+            },
+            scales: {
+                yAxes: [{
+                        ticks: {
+                            min: 0,
+                        }
+                    }]
+            }
+        };
+    };
+    Tools.CHART_HISTORY_LABELS_MAX = 10 * 360;
+    Tools.CHART_HISTORY_LABELS = [];
+    return Tools;
 }());
 var SampleResourceSpecs = /** @class */ (function () {
     function SampleResourceSpecs() {
@@ -313,9 +317,9 @@ var ResourceManager = /** @class */ (function () {
             resource.Step_Regenerate();
         });
     };
-    ResourceManager.prototype.Step_RecordHistory = function (i) {
+    ResourceManager.prototype.Step_RecordHistory = function () {
         this.resources_array.forEach(function (resource) {
-            resource.Step_RecordHistory(i);
+            resource.Step_RecordHistory();
         });
     };
     ResourceManager.prototype.Step_RefreshUI = function () {
@@ -325,6 +329,7 @@ var ResourceManager = /** @class */ (function () {
     };
     return ResourceManager;
 }());
+/// <reference path="./Tools.ts" />
 /// <reference path="./ProcessSpec.ts" />
 var Process = /** @class */ (function () {
     function Process(process_spec) {
@@ -350,6 +355,28 @@ var Process = /** @class */ (function () {
     Process.prototype.GetUI = function () {
         var panel = $('<div class="process" style="background-image:url(' + this.process_spec.img + '?w=600&q=80);"></div>');
         panel.append($('<div style="text-align:center;"><h1>' + this.process_spec.name + '</h1></div>'));
+        var control_panel = $('<div class="controls"></div>');
+        panel.append(control_panel);
+        {
+            var canvas_chart_quantity = ($('<canvas />')[0]);
+            var ctx = canvas_chart_quantity.getContext('2d');
+            var config = {
+                type: 'line',
+                data: {
+                    labels: Tools.CHART_HISTORY_LABELS,
+                    datasets: [{
+                            pointRadius: 1,
+                            data: this.quantity_history,
+                            lineTension: 0,
+                        }]
+                },
+                options: Tools.Get_CHART_OPTIONS({
+                    display: false,
+                }),
+            };
+            this.chart_quantity = new Chart(ctx, config);
+            control_panel.append(canvas_chart_quantity);
+        }
         return panel;
     };
     Process.prototype.Step_Process = function (resource_manager) {
@@ -418,6 +445,7 @@ var ProcessManager = /** @class */ (function () {
     };
     return ProcessManager;
 }());
+/// <reference path="./Tools.ts" />
 /// <reference path="./SampleResourceSpecs.ts" />
 /// <reference path="./SampleProcessSpecs.ts" />
 /// <reference path="./ResourceManager.ts" />
@@ -442,10 +470,14 @@ var Game = /** @class */ (function () {
         console.log('Game step ' + step_n);
         for (var i = 0; i < step_n; ++i) {
             ++this.step;
+            Tools.CHART_HISTORY_LABELS.push('' + this.step);
+            while (Tools.CHART_HISTORY_LABELS.length > Tools.CHART_HISTORY_LABELS_MAX) {
+                Tools.CHART_HISTORY_LABELS.splice(0, 1);
+            }
             // Run each process
             this.process_manager.Step_Process(this.resource_manager);
             this.resource_manager.Step_Regenerate();
-            this.resource_manager.Step_RecordHistory('' + this.step);
+            this.resource_manager.Step_RecordHistory();
         }
         this.resource_manager.Step_RefreshUI();
         this.process_manager.Step_RefreshUI();

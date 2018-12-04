@@ -47,9 +47,9 @@ class ResourceManager {
         });
     }
 
-    public Step_RecordHistory(i: string): void {
+    public Step_RecordHistory(): void {
         this.resources_array.forEach(resource => {
-            resource.Step_RecordHistory(i);
+            resource.Step_RecordHistory();
         });
     }
 

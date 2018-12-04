@@ -1,13 +1,21 @@
+/// <reference path="./Tools.ts" />
+
 /// <reference path="./ProcessSpec.ts" />
 
 class  Process {
     private inputs_array: string[] = [];
     
+    private chart_quantity: Chart;
+    private quantity_history: number[];
+
+
     private inputs_required_map: { [resource: string]: number } = {};
     private inputs_provided_map: { [resource: string]: number } = {};
     private output_possible_map: { [resource: string]: number } = {};
     private inputs_used_map: { [resource: string]: number } = {};
+
     
+
 
     constructor(private process_spec: ProcessSpec) {
         // Create the map of all the inputs
@@ -27,6 +35,37 @@ class  Process {
     public GetUI() {
         let panel = $('<div class="process" style="background-image:url(' + this.process_spec.img + '?w=600&q=80);"></div>');
         panel.append($('<div style="text-align:center;"><h1>' + this.process_spec.name + '</h1></div>'));
+
+        let control_panel = $('<div class="controls"></div>');
+        panel.append(control_panel);
+
+        {
+            let canvas_chart_quantity = <HTMLCanvasElement>($('<canvas />')[0]);
+
+            var ctx = canvas_chart_quantity.getContext('2d');
+
+            var config = {
+                type: 'line',
+                data: {
+                    labels: Tools.CHART_HISTORY_LABELS,
+                    datasets: [{
+                        pointRadius: 1,
+                        data: this.quantity_history,
+                        lineTension: 0,
+                    }]
+                },
+                options: Tools.Get_CHART_OPTIONS(
+                    {
+                        display: false,
+                    },
+                ),
+
+            };
+
+            this.chart_quantity = new Chart(ctx, config);
+            control_panel.append(canvas_chart_quantity);
+        }
+
 
         return panel;
     }

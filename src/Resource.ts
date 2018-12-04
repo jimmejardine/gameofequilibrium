@@ -1,19 +1,14 @@
 class Resource {
-    private static HISTORY = 10*360;
-
     private quantity: number;
     private quantity_history: number[];
-    private quantity_history_label: string[];
 
     private allocations: any;
 
     private chart_quantity: Chart;
 
-
     constructor(private resource_spec: ResourceSpec, process_specs: ProcessSpec[]) {
         this.quantity = 0;
         this.quantity_history = [];
-        this.quantity_history_label = [];
 
         this.allocations = {};
         process_specs.forEach(process_spec => {
@@ -46,34 +41,18 @@ class Resource {
             var config = {
                 type: 'line',
                 data: {
-                    labels: this.quantity_history_label,
+                    labels: Tools.CHART_HISTORY_LABELS,
                     datasets: [{
                         pointRadius: 1,
                         data: this.quantity_history,
                         lineTension: 0,
                     }]
                 },
-                options: {
-                    legend: {
-                        display: false
+                options: Tools.Get_CHART_OPTIONS(
+                    {
+                        display: false,
                     },
-                    tooltips: {						
-						enabled: false
-					},
-                    responsive: true,
-                    elements: {
-						point: {
-							//pointStyle: 'none',
-						}
-					},
-                    scales: {
-                        yAxes: [{
-                            ticks: {
-                                min: 0,
-                            }
-                        }]
-                    }
-                }
+                ),
             };
 
             this.chart_quantity = new Chart(ctx, config);
@@ -165,15 +144,11 @@ class Resource {
         }
     }
 
-    public Step_RecordHistory(i: string) {
+    public Step_RecordHistory() {
         this.quantity_history.push(this.quantity);
-        this.quantity_history_label.push(i);
-
-        while (this.quantity_history.length > Resource.HISTORY) {
+        
+        while (this.quantity_history.length > Tools.CHART_HISTORY_LABELS_MAX) {
             this.quantity_history.splice(0, 1);
-        }
-        while (this.quantity_history_label.length > Resource.HISTORY) {
-            this.quantity_history_label.splice(0, 1);
         }
     }
 
