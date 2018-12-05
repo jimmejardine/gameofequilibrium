@@ -5,7 +5,7 @@ class SampleResourceSpecs {
             name: 'progress',
             baseline: 1,
             decay: 0,
-            img: 'https://images.unsplash.com/xxx',
+            img: 'https://images.unsplash.com/photo-1526648856597-c2b6745ad7bd',
         },
 
         {
