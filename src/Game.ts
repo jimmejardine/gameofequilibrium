@@ -8,21 +8,17 @@
 /// <reference path="./ControlPanel.ts" />
 
 class Game {
-
     private resource_specs: ResourceSpec[];
     private process_specs: ProcessSpec[];
     private resource_manager: ResourceManager;
     private process_manager: ProcessManager;
     private control_panel: ControlPanel;
 
-    constructor() {
-    }
+    constructor(public a_resource_specs: ResourceSpec[], public a_process_specs: ProcessSpec[]) {    
+        this.resource_specs = a_resource_specs
+        this.process_specs = a_process_specs;
 
-    public Initialise(): void {
-        console.log('Game initialising');
-
-        this.resource_specs = SampleResourceSpecs.SPECS;
-        this.process_specs = SampleProcessSpecs.SPECS;
+        $('body').empty();
 
         this.resource_manager = new ResourceManager(this.resource_specs, this.process_specs);
         $('body').append(this.resource_manager.GetUI());
@@ -64,12 +60,12 @@ class Game {
         this.resource_manager.Step_RefreshUI();
         this.process_manager.Step_RefreshUI();
     }
+
+    public static Restart(a_resource_specs: ResourceSpec[], a_process_specs: ProcessSpec[]): void {
+        let game: Game = new Game(a_resource_specs, a_process_specs);
+    }
 }
 
 
 
-
-
-let game: Game = new Game();
-game.Initialise();
-
+Game.Restart(SampleResourceSpecs.SPECS, SampleProcessSpecs.SPECS);

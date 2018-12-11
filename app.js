@@ -148,32 +148,66 @@ var ControlPanel = /** @class */ (function () {
         var self = this;
         var panel = $('<div id="control-panel"></div>');
         {
-            var step_auto_1 = $('<input type="checkbox" />');
-            step_auto_1.change(function () {
-                self.auto_step = step_auto_1.prop("checked");
-            });
-            panel.append(step_auto_1);
+            var toolbar_1 = $('<div id="toolbar"></div>');
+            panel.append(toolbar_1);
+            {
+                var step_auto_1 = $('<input type="checkbox" />');
+                toolbar_1.append(step_auto_1);
+                step_auto_1.change(function () {
+                    self.auto_step = step_auto_1.prop("checked");
+                });
+                toolbar_1.append('Auto-step');
+                toolbar_1.append(' ');
+            }
+            {
+                var step_1 = $('<button>Step</button>');
+                toolbar_1.append(step_1);
+                step_1.click(function () {
+                    self.game.Step(1);
+                });
+            }
+            {
+                var step_30 = $('<button>Step 30</button>');
+                toolbar_1.append(step_30);
+                step_30.click(function () {
+                    self.game.Step(30);
+                });
+            }
+            {
+                var step_360 = $('<button>Step 360</button>');
+                toolbar_1.append(step_360);
+                step_360.click(function () {
+                    self.game.Step(360);
+                });
+            }
         }
+        // The rules
         {
-            var step_1 = $('<button>Step</button>');
-            step_1.click(function () {
-                self.game.Step(1);
+            var json_editor_options = {
+                history: true,
+                modes: ['tree', 'text',],
+            };
+            var rulebar = $('<div id="rulebar"></div>');
+            panel.append(rulebar);
+            var resource_rules_text = $('<div class="json_editor_holder" />');
+            rulebar.append(resource_rules_text);
+            var resource_rules_editor_1 = new JSONEditor(resource_rules_text[0], json_editor_options, SampleResourceSpecs.SPECS);
+            var process_rules_text = $('<div class="json_editor_holder" />');
+            rulebar.append(process_rules_text);
+            var process_rules_editor_1 = new JSONEditor(process_rules_text[0], json_editor_options, SampleProcessSpecs.SPECS);
+            rulebar.append('<br/>');
+            var submit = $('<button>Use these rules</button>');
+            rulebar.append(submit);
+            submit.click(function () {
+                try {
+                    var a_resource_specs = resource_rules_editor_1.get();
+                    var a_process_specs = process_rules_editor_1.get();
+                    Game.Restart(a_resource_specs, a_process_specs);
+                }
+                catch (err) {
+                    alert(err);
+                }
             });
-            panel.append(step_1);
-        }
-        {
-            var step_30 = $('<button>Step 30</button>');
-            step_30.click(function () {
-                self.game.Step(30);
-            });
-            panel.append(step_30);
-        }
-        {
-            var step_360 = $('<button>Step 360</button>');
-            step_360.click(function () {
-                self.game.Step(360);
-            });
-            panel.append(step_360);
         }
         return panel;
     };
@@ -538,20 +572,20 @@ var ProcessManager = /** @class */ (function () {
 /// <reference path="./ProcessManager.ts" />
 /// <reference path="./ControlPanel.ts" />
 var Game = /** @class */ (function () {
-    function Game() {
+    function Game(a_resource_specs, a_process_specs) {
+        this.a_resource_specs = a_resource_specs;
+        this.a_process_specs = a_process_specs;
         this.step = 0;
-    }
-    Game.prototype.Initialise = function () {
-        console.log('Game initialising');
-        this.resource_specs = SampleResourceSpecs.SPECS;
-        this.process_specs = SampleProcessSpecs.SPECS;
+        this.resource_specs = a_resource_specs;
+        this.process_specs = a_process_specs;
+        $('body').empty();
         this.resource_manager = new ResourceManager(this.resource_specs, this.process_specs);
         $('body').append(this.resource_manager.GetUI());
         this.process_manager = new ProcessManager(this.resource_specs, this.process_specs);
         $('body').append(this.process_manager.GetUI());
         this.control_panel = new ControlPanel(this);
         $('body').append(this.control_panel.GetUI());
-    };
+    }
     Game.prototype.Step = function (step_n) {
         console.log('Game step ' + step_n);
         for (var i = 0; i < step_n; ++i) {
@@ -575,8 +609,10 @@ var Game = /** @class */ (function () {
         this.resource_manager.Step_RefreshUI();
         this.process_manager.Step_RefreshUI();
     };
+    Game.Restart = function (a_resource_specs, a_process_specs) {
+        var game = new Game(a_resource_specs, a_process_specs);
+    };
     return Game;
 }());
-var game = new Game();
-game.Initialise();
+Game.Restart(SampleResourceSpecs.SPECS, SampleProcessSpecs.SPECS);
 //# sourceMappingURL=app.js.map
